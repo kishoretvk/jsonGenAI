@@ -7,13 +7,11 @@ import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import math
 
-
 def round_to_nsf(num, nsf):
     if num != 0:
         return round(num, -int(math.floor(math.log10(abs(num))) + 1 - nsf))
     else:
         return 0  # Can't take the log of 0
-
 
 def get_valid_next_choices(choices_tokens, current_tokens):
     next_choices = []
@@ -27,7 +25,6 @@ def get_valid_next_choices(choices_tokens, current_tokens):
 
     next_choices = list(set(next_choices))
     return torch.LongTensor(next_choices)
-
 
 def _prob_choice_tree(
     model: AutoModelForCausalLM,
@@ -65,7 +62,6 @@ def _prob_choice_tree(
                 prob=next_prob,
                 current_tokens=current_tokens,
             )
-
 
 def prob_choice_tree(
     *args,
