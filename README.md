@@ -1,7 +1,49 @@
 # jsonAI 
 
-This has be updated to support multiple data Types so we can make thismore flexible and easy to use . 
-Added support to generate longer strings, example description. 
+jsonAI is a Python library for generating JSON objects based on a given schema using a pre-trained language model. It supports a wide range of data types, including numbers, integers, booleans, strings, datetime, date, time, UUID, and binary data.
+
+## Bsic Usage 
+
+
+## Example
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from jsonAI.main import Jsonformer
+
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+json_schema = {
+    "type": "object",
+    "properties": {
+        "number": {"type": "number"},
+        "integer": {"type": "integer"},
+        "boolean": {"type": "boolean"},
+        "string": {"type": "string"},
+        "datetime": {"type": "datetime"},
+        "date": {"type": "date"},
+        "time": {"type": "time"},
+        "uuid": {"type": "uuid"},
+        "binary": {"type": "binary"},
+    }
+}
+prompt = "Generate a JSON object"
+
+jsonformer = Jsonformer(
+    model=model,
+    tokenizer=tokenizer,
+    json_schema=json_schema,
+    prompt=prompt,
+    debug=True
+)
+
+generated_data = jsonformer()
+print(generated_data)
+
+
+
+
+
 
 
 
