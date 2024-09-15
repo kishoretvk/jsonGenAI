@@ -1,14 +1,17 @@
 from typing import List, Set, Union, Dict, Any
+from datetime import datetime, date, time
+import base64
 
-from prob_jsonformer.logits_processors import (
+
+from jsonAI.logits_processors import (
     NumberStoppingCriteria,
     OutputNumbersTokens,
     IntegerStoppingCriteria,
     OutputIntegersTokens,
     StringStoppingCriteria,
 )
-from prob_jsonformer.prob_choice_tree import prob_choice_tree, round_to_nsf
-from prob_jsonformer.type_prefixes import get_prefix_tokens_for_types
+from jsonAI.prob_choice_tree import prob_choice_tree, round_to_nsf
+from jsonAI.type_prefixes import get_prefix_tokens_for_types
 
 from termcolor import cprint
 from transformers import PreTrainedModel, PreTrainedTokenizer
@@ -60,6 +63,27 @@ class Jsonformer:
             else:
                 cprint(caller, "green", end=" ")
                 cprint(value, "blue")
+    
+    def generate_datetime(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_datetime]", prompt, is_prompt=True)
+        # Generate a datetime string in ISO format
+        return datetime.now().isoformat()
+    
+    def generate_date(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_date]", prompt, is_prompt=True)
+        # Generate a date string in ISO format
+        return date.today().isoformat()
+    
+    def generate_time(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_time]", prompt, is_prompt=True)
+        # Generate a time string in ISO format
+        return datetime.now().time().isoformat()
+    
+    
+
 
     def generate_number(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
@@ -343,6 +367,36 @@ class Jsonformer:
             return self.generate_string(
                 schema["maxLength"] if "maxLength" in schema else None
             )
+        elif schema_type == "datetime":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_datetime()
+        elif schema_type == "date":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_date()
+        elif schema_type == "time":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_time()
+        elif schema_type == "uuid":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_uuid()
+        elif schema_type == "binary":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_binary()
         elif schema_type == "p_enum":
             if key:
                 obj[key] = self.generation_marker
@@ -378,6 +432,7 @@ class Jsonformer:
             return None
         else:
             raise ValueError(f"Unsupported schema type: {schema_type}")
+    
 
     def generate_array(self, item_schema: Dict[str, Any], obj: Dict[str, Any]) -> list:
         for _ in range(self.max_array_length):
