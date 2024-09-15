@@ -1,3 +1,10 @@
+# jsonAI 
+
+This has be updated to support multiple data Types so we can make thismore flexible and easy to use . 
+Added support to generate longer strings, example description. 
+
+
+
 # prob_jsonformer: Probabilistic Structured JSON from Language Models.
 
 This fork has been modified to include the token probabilities. This is not complaint with json schema, but it can be useful for efficient extracting of a range of possible values.

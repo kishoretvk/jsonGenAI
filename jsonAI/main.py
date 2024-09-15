@@ -35,7 +35,7 @@ class Jsonformer:
         max_array_length: int = 10,
         max_number_tokens: int = 6,
         temperature: float = 1.0,
-        max_string_token_length: int = 10,
+        max_string_token_length: int = 175,
     ):
         self.model = model
         self.tokenizer = tokenizer
