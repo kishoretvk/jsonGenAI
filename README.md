@@ -41,11 +41,7 @@ generated_data = jsonformer()
 print(generated_data)
 
 
-
-
-
-
-
+```
 
 # prob_jsonformer: Probabilistic Structured JSON from Language Models.
 
