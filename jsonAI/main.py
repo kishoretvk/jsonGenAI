@@ -1,6 +1,8 @@
 from typing import List, Set, Union, Dict, Any
 from datetime import datetime, date, time
+import uuid
 import base64
+
 
 
 from jsonAI.logits_processors import (
@@ -81,6 +83,16 @@ class Jsonformer:
         self.debug("[generate_time]", prompt, is_prompt=True)
         # Generate a time string in ISO format
         return datetime.now().time().isoformat()
+    
+    def generate_uuid(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_uuid]", prompt, is_prompt=True)
+        return str(uuid.uuid4())
+    
+    def generate_binary(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_binary]", prompt, is_prompt=True)
+        return base64.b64encode(b"example binary data").decode('utf-8')
     
     
 
