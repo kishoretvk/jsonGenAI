@@ -95,41 +95,15 @@ class Jsonformer:
         prompt = self.get_prompt()
         self.debug("[generate_time]", prompt, is_prompt=True)
         return datetime.now().time().isoformat()
-
+    
     def generate_uuid(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
         self.debug("[generate_uuid]", prompt, is_prompt=True)
-        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
-            self.model.device
-        )
-        response = self.model.generate(
-            input_tokens,
-            max_new_tokens=self.max_number_tokens,
-            num_return_sequences=1,
-            temperature=temperature or self.temperature,
-            pad_token_id=self.tokenizer.eos_token_id,
-        )
-        response = self.tokenizer.decode(response[0], skip_special_tokens=True)
-
-        response = response[len(prompt):]
-        response = response.replace(" ", "").strip()
-        self.debug("[generate_uuid]", response)
-        try:
-            uuid_obj = uuid.UUID(response)
-            return str(uuid_obj)
-        except ValueError:
-            self.debug("[generate_uuid] Invalid UUID generated", response)
-            if iterations > 3:
-                raise ValueError("Failed to generate a valid UUID after multiple attempts")
-
-            return self.generate_uuid(
-                temperature=self.temperature * 1.3, iterations=iterations + 1
-            )
-
-    def generate_binary(self) -> str:
-        prompt = self.get_prompt()
-        self.debug("[generate_binary]", prompt, is_prompt=True)
-        return base64.b64encode(b"example binary data").decode('utf-8')
+        # Directly generate a valid UUID
+        uuid_str = str(uuid.uuid4())
+        self.debug("[generate_uuid]", uuid_str)
+        return uuid_str
+   
 
     def generate_number(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
