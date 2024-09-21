@@ -4,6 +4,22 @@ jsonAI is a Python library for generating JSON objects based on a given schema u
 
 The idea to create json structures with strong typed schemas is now possible, with any numbe rof variable combinations. 
 
+This currently supports a subset of JSON Schema. Below is a list of the supported schema types:
+
+- number 
+- integer
+- boolean
+- string  (descriptions also enabled to satisfy summary)
+- datetime
+- date
+- time 
+- UUID
+- binary data
+### combinations 
+- arrays
+- enums
+- complex object
+
 
 ## Bsic Usage 
 
@@ -142,6 +158,54 @@ print(generated_data)
 
 
 ```
+
+## Development
+
+### this is for colab 
+
+
+```bash
+# autoreload your package
+%load_ext autoreload
+%autoreload 2
+
+```
+```bash
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+print("Loading model and tokenizer...")
+model_name = "databricks/dolly-v2-3b"
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    use_cache=True,
+    torch_dtype=torch.float16,
+    attn_implementation="eager",
+).to("cuda:0")
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, use_cache=True)
+print("Loaded model and tokenizer")
+
+```
+
+```bash
+!git clone https://github.com/kishoretvk/jsonAI.git
+%cd jsonAI
+```
+
+```bash
+!pip install jaxtyping termcolor typeguard
+```
+
+```bash
+from jsonAI.format import highlight_values
+from jsonAI.main import Jsonformer
+
+```
+
+### after the above stpes on colab try any example given 
+
+
+
 
 # below refers to older code 
 
