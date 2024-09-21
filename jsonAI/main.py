@@ -170,10 +170,12 @@ class Jsonformer:
                 raise ValueError("Failed to generate a valid integer")
 
             return self.generate_integer(temperature=self.temperature * 1.3)
+        
     def generate_binary(self) -> str:
         prompt = self.get_prompt()
         self.debug("[generate_binary]", prompt, is_prompt=True)
-        return base64.b64encode(b"example binary data").decode('utf-8'
+        return base64.b64encode(b"example binary data").decode('utf-8')
+
 
     def generate_boolean(self) -> bool:
         prompt = self.get_prompt()
