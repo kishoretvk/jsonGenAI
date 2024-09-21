@@ -2,10 +2,110 @@
 
 jsonAI is a Python library for generating JSON objects based on a given schema using a pre-trained language model. It supports a wide range of data types, including numbers, integers, booleans, strings, datetime, date, time, UUID, and binary data.
 
+The idea to create json structures with strong typed schemas is now possible, with any numbe rof variable combinations. 
+
+
 ## Bsic Usage 
 
 
-## Example
+## Examples
+
+``` python 
+# Define the JSON schema
+json_schema = {
+    "type": "object",
+    "properties": {
+        "transaction_id": {"type": "uuid"},
+        "store": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "location": {"type": "string"},
+                "datetime": {"type": "datetime"}
+            }
+        },
+        "customer": {
+            "type": "object",
+            "properties": {
+                "customer_id": {"type": "uuid"},
+                "name": {"type": "string"},
+                "membership": {"type": "boolean"}
+            }
+        },
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item_id": {"type": "uuid"},
+                    "name": {"type": "string"},
+                    "category": {"type": "string"},
+                    "price": {"type": "number"},
+                    "quantity": {"type": "integer"}
+                }
+            }
+        },
+        "total_amount": {"type": "number"},
+        "payment_method": {"type": "string"},
+        "transaction_date": {"type": "date"},
+        "transaction_time": {"type": "time"},
+        "receipt_binary": {"type": "binary"}
+    }
+}
+
+# Define the prompt
+prompt = "Generate a JSON object representing a transaction at a Starbucks coffee shop. The transaction includes details such as transaction ID, store information, customer information, items purchased, total amount, payment method, transaction date and time, and a binary receipt."
+
+# Initialize Jsonformer
+jsonformer = Jsonformer(
+    model=model,
+    tokenizer=tokenizer,
+    json_schema=json_schema,
+    prompt=prompt,
+    debug=True
+)
+
+# Generate the data
+generated_data = jsonformer()
+print(generated_data)
+highlight_values(generated_data)
+
+```
+
+## generated Output 
+
+``` json
+{
+  transaction_id: "035a6195-5536-4272-966b-ba700c6de39c",
+  store: {
+    name: "Starbucks",
+    location: "San Francisco",
+    datetime: "2024-09-21T19:47:28.164729"
+  },
+  customer: {
+    customer_id: "b8a61099-4baf-4352-af86-922f476f2bfc",
+    name: "John Doe",
+    membership: True
+  },
+  items: [
+    {
+      item_id: "f60a82b6-b7e8-4a85-a202-fc6aa28e1de8",
+      name: "Coffee",
+      category: "Drip Brew",
+      price: 10.0,
+      quantity: 10000000
+    }
+  ],
+  total_amount: 2024092119.0,
+  payment_method: "card",
+  transaction_date: "2024-09-21",
+  transaction_time: "19:47:30.686584",
+  receipt_binary: "ZXhhbXBsZSBiaW5hcnkgZGF0YQ=="
+}
+
+```
+
+## Example 
 
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -43,7 +143,10 @@ print(generated_data)
 
 ```
 
-# prob_jsonformer: Probabilistic Structured JSON from Language Models.
+# below refers to older code 
+
+
+### prob_jsonformer: Probabilistic Structured JSON from Language Models.
 
 This fork has been modified to include the token probabilities. This is not complaint with json schema, but it can be useful for efficient extracting of a range of possible values.
 
