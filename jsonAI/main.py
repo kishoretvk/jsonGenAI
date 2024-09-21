@@ -20,6 +20,24 @@ import torch
 GENERATION_MARKER = "|GENERATION|"
 
 
+
+from jsonAI.logits_processors import (
+    NumberStoppingCriteria,
+    OutputNumbersTokens,
+    IntegerStoppingCriteria,
+    OutputIntegersTokens,
+    StringStoppingCriteria,
+)
+from jsonAI.prob_choice_tree import prob_choice_tree, round_to_nsf
+from jsonAI.type_prefixes import get_prefix_tokens_for_types
+
+from termcolor import cprint
+from transformers import PreTrainedModel, PreTrainedTokenizer
+import json
+import torch
+
+GENERATION_MARKER = "|GENERATION|"
+
 class Jsonformer:
     value: Dict[str, Any] = {}
 
@@ -62,68 +80,22 @@ class Jsonformer:
             else:
                 cprint(caller, "green", end=" ")
                 cprint(value, "blue")
-    
+
     def generate_datetime(self) -> str:
         prompt = self.get_prompt()
         self.debug("[generate_datetime]", prompt, is_prompt=True)
-        # Generate a datetime string in ISO format
         return datetime.now().isoformat()
-    
+
     def generate_date(self) -> str:
         prompt = self.get_prompt()
         self.debug("[generate_date]", prompt, is_prompt=True)
-        # Generate a date string in ISO format
         return date.today().isoformat()
-    
+
     def generate_time(self) -> str:
         prompt = self.get_prompt()
         self.debug("[generate_time]", prompt, is_prompt=True)
-        # Generate a time string in ISO format
         return datetime.now().time().isoformat()
-    
-    def generate_uuid(self) -> str:
-        prompt = self.get_prompt()
-        self.debug("[generate_uuid]", prompt, is_prompt=True)
-        return str(uuid.uuid4())
-    
-    def generate_binary(self) -> str:
-        prompt = self.get_prompt()
-        self.debug("[generate_binary]", prompt, is_prompt=True)
-        return base64.b64encode(b"example binary data").decode('utf-8')
-    
-    def generate_number(self, temperature: Union[float, None] = None, iterations=0):
-        prompt = self.get_prompt()
-        self.debug("[generate_number]", prompt, is_prompt=True)
-        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
-            self.model.device
-        )
-        response = self.model.generate(
-            input_tokens,
-            max_new_tokens=self.max_number_tokens,
-            num_return_sequences=1,
-            logits_processor=[self.number_logit_processor],
-            stopping_criteria=[
-                NumberStoppingCriteria(self.tokenizer, len(input_tokens[0]))
-            ],
-            temperature=temperature or self.temperature,
-            pad_token_id=self.tokenizer.eos_token_id,
-        )
-        response = self.tokenizer.decode(response[0], skip_special_tokens=True)
 
-        response = response[len(prompt) :]
-        if "," in response:
-            response = response.split(",")[0]
-        response = response.replace(" ", "").rstrip(".")
-        self.debug("[generate_number]", response)
-        try:
-            return float(response)
-        except ValueError:
-            if iterations > 3:
-                raise ValueError("Failed to generate a valid number")
-
-            return self.generate_number(
-                temperature=self.temperature * 1.3, iterations=iterations + 1
-            )
     def generate_uuid(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
         self.debug("[generate_uuid]", prompt, is_prompt=True)
@@ -143,20 +115,59 @@ class Jsonformer:
         response = response.replace(" ", "").strip()
         self.debug("[generate_uuid]", response)
         try:
-            # Validate the generated UUID
             uuid_obj = uuid.UUID(response)
             return str(uuid_obj)
         except ValueError:
+            self.debug("[generate_uuid] Invalid UUID generated", response)
             if iterations > 3:
-                raise ValueError("Failed to generate a valid UUID")
+                raise ValueError("Failed to generate a valid UUID after multiple attempts")
 
             return self.generate_uuid(
                 temperature=self.temperature * 1.3, iterations=iterations + 1
             )
 
-    def generate_integer(self, temperature: Union[float, None] = None, iterations=0):
+    def generate_binary(self) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_binary]", prompt, is_prompt=True)
+        return base64.b64encode(b"example binary data").decode('utf-8')
+
+    def generate_number(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
         self.debug("[generate_number]", prompt, is_prompt=True)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )
+        response = self.model.generate(
+            input_tokens,
+            max_new_tokens=self.max_number_tokens,
+            num_return_sequences=1,
+            logits_processor=[self.number_logit_processor],
+            stopping_criteria=[
+                NumberStoppingCriteria(self.tokenizer, len(input_tokens[0]))
+            ],
+            temperature=temperature or self.temperature,
+            pad_token_id=self.tokenizer.eos_token_id,
+        )
+        response = self.tokenizer.decode(response[0], skip_special_tokens=True)
+
+        response = response[len(prompt):]
+        if "," in response:
+            response = response.split(",")[0]
+        response = response.replace(" ", "").rstrip(".")
+        self.debug("[generate_number]", response)
+        try:
+            return float(response)
+        except ValueError:
+            if iterations > 3:
+                raise ValueError("Failed to generate a valid number")
+
+            return self.generate_number(
+                temperature=self.temperature * 1.3, iterations=iterations + 1
+            )
+
+    def generate_integer(self, temperature: Union[float, None] = None, iterations=0):
+        prompt = self.get_prompt()
+        self.debug("[generate_integer]", prompt, is_prompt=True)
         input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.model.device
         )
@@ -173,7 +184,7 @@ class Jsonformer:
         )
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
 
-        response = response[len(prompt) :]
+        response = response[len(prompt):]
         if "," in response:
             response = response.split(",")[0]
         response = response.replace(" ", "")
@@ -221,8 +232,6 @@ class Jsonformer:
             pad_token_id=self.tokenizer.eos_token_id,
         )
 
-        # Some models output the prompt as part of the response
-        # This removes the prompt from the response if it is present
         if (
             len(response[0]) >= len(input_tokens[0])
             and (response[0][: len(input_tokens[0])] == input_tokens).all()
@@ -241,9 +250,6 @@ class Jsonformer:
         return response.split('"')[0].strip()
 
     def generate_p_enum(self, values: list, round: int) -> str:
-        """
-        This is not in the json schema, but can be usefull for effeciently getting the prob distibution over choices
-        """
         prompt = self.get_prompt() + '"'
         self.debug("[generate_p_enum]", prompt, is_prompt=True)
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
@@ -262,13 +268,9 @@ class Jsonformer:
     def generate_p_integer(
         self, range_min: float, range_max: float, round: int
     ) -> float:
-        """
-        This is not in the json schema, but can be usefull for effeciently generating the weighted mean from a range of integers
-        """
         values = [str(n) for n in range(int(range_min), int(range_max) + 1)]
         result = self.generate_p_enum(values, round=round)
 
-        # now do a weighted average
         total = 0.0
         for r in result:
             total += float(r["choice"]) * r["prob"]
@@ -281,7 +283,6 @@ class Jsonformer:
         prompt = self.get_prompt()
         self.debug("[generate_enum]", prompt, is_prompt=True)
 
-        # These are necessary because we don't know if we're at the end or middle of an object/array
         terminal_tokens = torch.concat(
             [
                 self.tokenizer.encode(s, add_special_tokens=False, return_tensors="pt")[
@@ -331,6 +332,40 @@ class Jsonformer:
         for key, schema in properties.items():
             self.debug("[generate_object] generating value for", key)
             obj[key] = self.generate_value(schema, obj, key)
+        return obj
+
+    def generate_array(self, item_schema: Dict[str, Any], obj: Dict[str, Any]) -> list:
+        for _ in range(self.max_array_length):
+            element = self.generate_value(item_schema, obj)
+            obj[-1] = element
+
+            obj.append(self.generation_marker)
+            input_prompt = self.get_prompt()
+            obj.pop()
+            input_tensor = self.tokenizer.encode(input_prompt, return_tensors="pt")
+            output = self.model.forward(input_tensor.to(self.model.device))
+            logits = output.logits[0, -1]
+
+            top_indices = logits.topk(30).indices
+            sorted_token_ids = top_indices[logits[top_indices].argsort(descending=True)]
+
+            found_comma = False
+            found_close_bracket = False
+
+            for token_id in sorted_token_ids:
+                decoded_token = self.tokenizer.decode(
+                    token_id, skip_special_tokens=True
+                )
+                if "," in decoded_token:
+                    found_comma = True
+                    break
+                if "]" in decoded_token:
+                    found_close_bracket = True
+                    break
+
+            if found_close_bracket or not found_comma:
+                break
+
         return obj
 
     def choose_type_to_generate(self, possible_types: List[str]) -> str:
@@ -467,46 +502,9 @@ class Jsonformer:
             return None
         else:
             raise ValueError(f"Unsupported schema type: {schema_type}")
-    
-
-    def generate_array(self, item_schema: Dict[str, Any], obj: Dict[str, Any]) -> list:
-        for _ in range(self.max_array_length):
-            # forces array to have at least one element
-            element = self.generate_value(item_schema, obj)
-            obj[-1] = element
-
-            obj.append(self.generation_marker)
-            input_prompt = self.get_prompt()
-            obj.pop()
-            input_tensor = self.tokenizer.encode(input_prompt, return_tensors="pt")
-            output = self.model.forward(input_tensor.to(self.model.device))
-            logits = output.logits[0, -1]
-
-            top_indices = logits.topk(30).indices
-            sorted_token_ids = top_indices[logits[top_indices].argsort(descending=True)]
-
-            found_comma = False
-            found_close_bracket = False
-
-            for token_id in sorted_token_ids:
-                decoded_token = self.tokenizer.decode(
-                    token_id, skip_special_tokens=True
-                )
-                if "," in decoded_token:
-                    found_comma = True
-                    break
-                if "]" in decoded_token:
-                    found_close_bracket = True
-                    break
-
-            if found_close_bracket or not found_comma:
-                break
-
-        return obj
 
     def get_prompt(self):
         template = """{prompt}\nOutput result in the following JSON schema format:\n```json{schema}```\nResult: ```json\n{progress}"""
-        # TODO: collapse p_X schema types into X to not confuse the model
         value = self.value
 
         progress = json.dumps(value)
