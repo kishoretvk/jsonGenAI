@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "prob_jsonformer"
+name = "jsonAI"
 version = "0.12.0"
 description = ""
-authors = ["1rgs <rgsduke@gmail.com>"]
+authors = ["1rgs <kishoretvk9@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -18,10 +18,14 @@ accelerate = "^0.18.0"
 bitsandbytes = "^0.38.1"
 transformers = "^4.27.4"
 
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.packages]
+packages = [
+    { include = "jsonai" }
+]
 
 [virtualenvs]
 create = true
